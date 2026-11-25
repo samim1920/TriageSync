@@ -40,9 +40,13 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+
+        DaoAuthenticationProvider provider =
+                new DaoAuthenticationProvider();
+
         provider.setUserDetailsService(customUserDetailsService);
         provider.setPasswordEncoder(passwordEncoder);
+
         return provider;
     }
 
@@ -58,16 +62,25 @@ public class SecurityConfig {
                 )
 
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
                 )
 
                 .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(authenticationEntryPoint)
+                        exception.authenticationEntryPoint(
+                                authenticationEntryPoint
+                        )
                 )
 
                 .authenticationProvider(authenticationProvider())
 
                 .authorizeHttpRequests(auth -> auth
+
+                        // Allow CORS preflight requests
+                        .requestMatchers(
+                                HttpMethod.OPTIONS, "/**"
+                        ).permitAll()
 
                         // Public authentication endpoints
                         .requestMatchers(
@@ -79,9 +92,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**")
                         .hasRole("ADMIN")
 
-                        // USER and ADMIN can submit a new ticket
-                        .requestMatchers(HttpMethod.POST, "/api/tickets")
-                        .hasAnyRole("USER", "ADMIN")
+                        // USER and ADMIN can submit tickets
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/tickets"
+                        ).hasAnyRole("USER", "ADMIN")
 
                         // Ticket management: ADMIN only
                         .requestMatchers(
@@ -104,7 +119,7 @@ public class SecurityConfig {
                                 "/api/tickets/**"
                         ).hasRole("ADMIN")
 
-                        // Booking approval and rejection: ADMIN only
+                        // Booking approval and rejection
                         .requestMatchers(
                                 HttpMethod.PATCH,
                                 "/api/bookings/*/approve",
@@ -149,16 +164,28 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
+        // Allowed frontend origins
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173",
-                        "https://triage-sync-liart.vercel.app")
+                List.of(
+                        "http://localhost:5173",
+                        "https://triage-sync-liart.vercel.app"
+                )
         );
 
+        // Allowed HTTP methods
         configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                List.of(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "PATCH",
+                        "DELETE",
+                        "OPTIONS"
+                )
         );
 
         configuration.setAllowedHeaders(List.of("*"));
+
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
