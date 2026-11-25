@@ -1,9 +1,12 @@
 
 import axios from "axios";
 
+// Backend API URL
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+
 const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api",
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -31,7 +34,8 @@ api.interceptors.response.use(
     console.error("API Error:", {
       url: error.config?.url,
       status: error.response?.status,
-      message: error.response?.data?.message || error.message,
+      message:
+        error.response?.data?.message || error.message,
       data: error.response?.data,
     });
 
