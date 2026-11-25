@@ -29,68 +29,112 @@ const Login = () => {
     password: "",
   });
 
-  // Handle input changes
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  // Custom error messages
+  const getErrorMessage = (err) => {
+    const status = err.response?.status;
+
+    if (!err.response) {
+      return "Unable to connect to the server. Please check your internet connection.";
+    }
+
+    switch (status) {
+      case 400:
+        return "Invalid request. Please check your details.";
+
+      case 401:
+        return "Incorrect email or password. Please try again.";
+
+      case 403:
+        return "Access denied. You are not authorized to access this account.";
+
+      case 404:
+        return "Login service not found. Please contact support.";
+
+      case 409:
+        return "An account conflict occurred. Please contact support.";
+
+      case 429:
+        return "Too many login attempts. Please try again later.";
+
+      case 500:
+      case 502:
+      case 503:
+        return "Something went wrong on our server. Please try again later.";
+
+      default:
+        return "Login failed. Please try again.";
+    }
   };
 
-  // Change selected account type
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setError("");
+  };
+
+  // Change account type
   const handleLoginTypeChange = (type) => {
     setLoginType(type);
     setError("");
   };
 
-  // Authenticate user through Spring Boot API
+  // Login submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!formData.email.trim() || !formData.password) {
-      setError("Please enter your email and password.");
+    const email = formData.email.trim();
+
+    if (!email || !formData.password) {
+      setError("Please enter your email address and password.");
       return;
     }
 
     try {
       setLoading(true);
 
-      // Call AuthContext login method
       const loggedInUser = await login({
-        email: formData.email.trim(),
+        email,
         password: formData.password,
       });
 
-      // Verify the selected account type against backend role
+      if (!loggedInUser || !loggedInUser.role) {
+        logout();
+        setError("Unable to verify your account. Please try again.");
+        return;
+      }
+
+      // Verify selected account type
       if (loggedInUser.role !== loginType) {
         logout();
 
         setError(
-          `This account is not registered as ${
-            loginType === "ADMIN" ? "an Admin" : "a User"
-          }. Please select the correct account type.`
+          loginType === "ADMIN"
+            ? "This is not an Administrator account. Please select User Login."
+            : "This is not a User account. Please select Admin Login."
         );
 
         return;
       }
 
-      // Redirect according to backend role
+      // Redirect according to role
       if (loggedInUser.role === "ADMIN") {
         navigate("/admin/admindashboard", { replace: true });
       } else if (loggedInUser.role === "USER") {
         navigate("/user/dashboard", { replace: true });
       } else {
         logout();
-        setError("Invalid account role.");
+        setError("Your account role is invalid. Please contact support.");
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-        err.response?.data?.detail ||
-        err.message ||
-        "Invalid email or password. Please try again."
-      );
+      console.error("Login error:", err);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -247,9 +291,12 @@ const Login = () => {
 
             </div>
 
-            {/* Error Message */}
+            {/* Custom Error Message */}
             {error && (
-              <div className="mb-5 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+              <div
+                role="alert"
+                className="mb-5 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm"
+              >
                 {error}
               </div>
             )}
