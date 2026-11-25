@@ -168,7 +168,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(
                 List.of(
                         "http://localhost:5173",
-                        "https://triage-sync-liart.vercel.app"
+                        "https://triage-sync-liart.vercel.app/"
                 )
         );
 
